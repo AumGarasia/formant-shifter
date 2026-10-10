@@ -10,6 +10,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(external/JUCE)
+# DSP engine library: JUCE-free, shared by the plugin, tests and offline harness
+add_library(fsdsp STATIC
+    src/dsp/PitchFormantEngine.h
+    src/dsp/PassthroughEngine.h
+    src/dsp/PassthroughEngine.cpp)
+
+target_include_directories(fsdsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_features(fsdsp PUBLIC cxx_std_20)
+target_link_libraries(fsdsp PRIVATE juce::juce_recommended_warning_flags)
 
 juce_add_plugin(FormantShifter
     COMPANY_NAME                "Alias4garmore"        
@@ -37,6 +46,7 @@ target_compile_definitions(FormantShifter PUBLIC
 target_link_libraries(FormantShifter
     PRIVATE
         juce::juce_audio_utils
+        fsdsp
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
