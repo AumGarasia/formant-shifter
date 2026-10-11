@@ -9,6 +9,7 @@ namespace fsdsp {
     void PassthroughEngine::reset() {}
     void PassthroughEngine::setPitchSemitones (float) {}
     void PassthroughEngine::setFormantSemitones (float) {}
+    int PassthroughEngine::getLatencySamples() const { return 0; }
 
     void PassthroughEngine::process (const float* const* inputs, float* const* outputs, 
                                      int numChannels, int numFrames)

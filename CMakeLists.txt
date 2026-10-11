@@ -51,3 +51,18 @@ target_link_libraries(FormantShifter
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
+
+# --- Tests ---
+enable_testing()
+add_subdirectory(external/Catch2)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/extras)
+include(Catch)
+
+add_executable(fsdsp_tests
+    tests/PassthroughEngineTests.cpp)
+
+target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)
+set_target_properties(fsdsp_tests PROPERTIES
+    XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-")
+catch_discover_tests(fsdsp_tests DISCOVERY_MODE PRE_TEST)
