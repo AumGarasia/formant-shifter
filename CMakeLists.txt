@@ -66,3 +66,25 @@ set_target_properties(fsdsp_tests PROPERTIES
     XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-")
 catch_discover_tests(fsdsp_tests DISCOVERY_MODE PRE_TEST)
+
+# Offline Render tool
+juce_add_console_app(offline_render
+    PRODUCT_NAME "Offline Render")
+
+target_sources(offline_render PRIVATE
+    tools/offline/main.cpp)
+
+target_compile_definitions(offline_render PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0)
+    
+target_link_libraries(offline_render
+    PRIVATE
+        fsdsp 
+        juce::juce_audio_formats
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags)
+
+set_target_properties(offline_render PROPERTIES
+    XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-")
