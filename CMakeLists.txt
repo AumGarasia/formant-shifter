@@ -14,7 +14,9 @@ add_subdirectory(external/JUCE)
 add_library(fsdsp STATIC
     src/dsp/PitchFormantEngine.h
     src/dsp/PassthroughEngine.h
-    src/dsp/PassthroughEngine.cpp)
+    src/dsp/PassthroughEngine.cpp
+    src/dsp/OfflineRenderer.h
+    src/dsp/OfflineRenderer.cpp)
 
 target_include_directories(fsdsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(fsdsp PUBLIC cxx_std_20)
@@ -59,8 +61,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/extras
 include(Catch)
 
 add_executable(fsdsp_tests
-    tests/PassthroughEngineTests.cpp)
+    tests/PassthroughEngineTests.cpp
+    tests/OfflineRendererTests.cpp
+    tests/support/DelayEngine.h)
 
+target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)
 set_target_properties(fsdsp_tests PROPERTIES
     XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
