@@ -1,5 +1,6 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 
+#include "dsp/OfflineRenderer.h"
 #include "dsp/PassthroughEngine.h"
 
 #include <algorithm>
@@ -173,43 +174,31 @@ int main (int argc, char* argv[])
     engine->setPitchSemitones (opts->pitchSemitones);
     engine->setFormantSemitones (opts->formantSemitones);
 
-    // The engine delays its output by `latency` samples, so feed it that many
-    // extra frames of silence to flush the tail, then skip the first `latency`
-    // output samples to line the result up with the input.
+    // --- Render: block processing and latency alignment live in fsdsp ---
     const int latency = engine->getLatencySamples();
-    const int totalFrames = numSamples + latency;
 
-    juce::AudioBuffer<float> padded (numChannels, totalFrames);
-    padded.clear();
+    fsdsp::PlanarAudio planarInput (static_cast<std::size_t> (numChannels));
+
     for (int ch = 0; ch < numChannels; ++ch)
-        padded.copyFrom (ch, 0, input, ch, 0, numSamples);
-
-    juce::AudioBuffer<float> rendered (numChannels, totalFrames);
-    rendered.clear();
-
-    juce::HeapBlock<const float*> inPtrs (static_cast<std::size_t> (numChannels));
-    juce::HeapBlock<float*> outPtrs (static_cast<std::size_t> (numChannels));
-
-    // --- Process in blocks ---
-    const double startMs = juce::Time::getMillisecondCounterHiRes();
-
-    for (int start = 0; start < totalFrames; start += kBlockSize)
     {
-        const int frames = std::min (kBlockSize, totalFrames - start);
-
-        for (int ch = 0; ch < numChannels; ++ch)
-        {
-            inPtrs[ch] = padded.getReadPointer (ch, start);
-            outPtrs[ch] = rendered.getWritePointer (ch, start);
-        }
-
-        engine->process (inPtrs.get(), outPtrs.get(), numChannels, frames);
+        const float* src = input.getReadPointer (ch);
+        planarInput[static_cast<std::size_t> (ch)].assign (src, src + numSamples);
     }
 
+    const double startMs = juce::Time::getMillisecondCounterHiRes();
+    auto planarOutput = fsdsp::renderAligned (*engine, planarInput, kBlockSize);
     const double elapsedMs = juce::Time::getMillisecondCounterHiRes() - startMs;
     const double audioMs = 1000.0 * numSamples / sampleRate;
 
-    // --- Write the aligned result as 32-bit float WAV ---
+    // View the aligned result as a juce::AudioBuffer (no copy) for writing and reporting.
+    juce::HeapBlock<float*> outPtrs (static_cast<std::size_t> (numChannels));
+
+    for (int ch = 0; ch < numChannels; ++ch)
+        outPtrs[ch] = planarOutput[static_cast<std::size_t> (ch)].data();
+
+    const juce::AudioBuffer<float> rendered (outPtrs.get(), numChannels, numSamples);
+
+    // --- Write the result as 32-bit float WAV ---
     // FileOutputStream appends to an existing file, so remove any old output first.
     if (opts->output.existsAsFile() && ! opts->output.deleteFile())
     {
@@ -241,8 +230,7 @@ int main (int argc, char* argv[])
         return 1;
     }
 
-    // Skip the first `latency` samples so the output lines up with the input.
-    if (! writer->writeFromAudioSampleBuffer (rendered, latency, numSamples))
+    if (! writer->writeFromAudioSampleBuffer (rendered, 0, numSamples))
     {
         std::cerr << "error: failed while writing audio data\n";
         return 1;
@@ -269,9 +257,9 @@ int main (int argc, char* argv[])
               << opts->formantSemitones << " st\n"
               << "latency:     " << latency << " samples\n"
               << "input peak:  " << input.getMagnitude (0, numSamples) << '\n'
-              << "output peak: " << rendered.getMagnitude (latency, numSamples) << '\n'
+              << "output peak: " << rendered.getMagnitude (0, numSamples) << '\n'
               << "max |diff| vs input: "
-              << maxAbsDifference (input, 0, rendered, latency, numSamples) << '\n';
+              << maxAbsDifference (input, 0, rendered, 0, numSamples) << '\n';
 
     if (elapsedMs > 0.0)
         std::cout << "speed:       " << audioMs / elapsedMs << "x real time\n";
