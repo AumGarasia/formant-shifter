@@ -193,7 +193,10 @@ int main (int argc, char* argv[])
         return 1;
     }
 
+    const double prepareStartMs = juce::Time::getMillisecondCounterHiRes();
     engine->prepare (sampleRate, kBlockSize, numChannels);
+    const double prepareMs = juce::Time::getMillisecondCounterHiRes() - prepareStartMs;
+
     engine->setPitchSemitones (opts->pitchSemitones);
     engine->setFormantSemitones (opts->formantSemitones);
 
@@ -274,6 +277,7 @@ int main (int argc, char* argv[])
     // --- Report ---
     std::cout << "input:       " << opts->input.getFullPathName().toStdString() << '\n'
               << "output:      " << opts->output.getFullPathName().toStdString() << '\n'
+              << "prepare:     " << prepareMs << " ms\n"
               << "engine:      " << opts->engine << '\n'
               << "format:      " << sampleRate << " Hz, " << numChannels << " ch, "
               << numSamples << " samples (" << audioMs / 1000.0 << " s)\n"
