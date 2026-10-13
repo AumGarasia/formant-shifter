@@ -1,7 +1,7 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 
+#include "dsp/EngineFactory.h"
 #include "dsp/OfflineRenderer.h"
-#include "dsp/PassthroughEngine.h"
 
 #include <algorithm>
 #include <cmath>
@@ -23,6 +23,7 @@ struct Options
 {
     juce::File input;
     juce::File output;
+    std::string engine = "passthrough";
     float pitchSemitones = 0.0f;
     float formantSemitones = 0.0f;
 };
@@ -52,7 +53,7 @@ std::optional<Options> parseArgs (int argc, char* argv[])
     {
         const std::string flag = argv[i++];                 // consume the flag
 
-        if (flag != "--pitch" && flag != "--formant" && flag != "--output")
+        if (flag != "--pitch" && flag != "--formant" && flag != "--output" && flag != "--engine")
         {
             std::cerr << "error: unknown option '" << flag << "'\n";
             return std::nullopt;
@@ -69,6 +70,10 @@ std::optional<Options> parseArgs (int argc, char* argv[])
         if (flag == "--output")
         {
             opts.output = juce::File::getCurrentWorkingDirectory().getChildFile (value);
+        }
+        else if (flag == "--engine")
+        {
+            opts.engine = value;
         }
         else
         {
@@ -133,8 +138,14 @@ int main (int argc, char* argv[])
 
     if (! opts.has_value())
     {
-        std::cerr << "usage: offline_render <input.wav> [--pitch semitones] "
-                     "[--formant semitones] [--output out.wav]\n";
+        std::cerr << "usage: offline_render <input.wav> [--engine name] [--pitch semitones] "
+                     "[--formant semitones] [--output out.wav]\n"
+                     "engines:";
+
+        for (const auto& name : fsdsp::engineNames())
+            std::cerr << ' ' << name;
+
+        std::cerr << '\n';
         return 1;
     }
 
@@ -169,7 +180,19 @@ int main (int argc, char* argv[])
     }
 
     // --- Engine setup ---
-    std::unique_ptr<fsdsp::PitchFormantEngine> engine = std::make_unique<fsdsp::PassthroughEngine>();
+    std::unique_ptr<fsdsp::PitchFormantEngine> engine = fsdsp::makeEngine (opts->engine);
+
+    if (engine == nullptr)
+    {
+        std::cerr << "error: unknown engine '" << opts->engine << "'. Available:";
+
+        for (const auto& name : fsdsp::engineNames())
+            std::cerr << ' ' << name;
+
+        std::cerr << '\n';
+        return 1;
+    }
+
     engine->prepare (sampleRate, kBlockSize, numChannels);
     engine->setPitchSemitones (opts->pitchSemitones);
     engine->setFormantSemitones (opts->formantSemitones);
@@ -251,6 +274,7 @@ int main (int argc, char* argv[])
     // --- Report ---
     std::cout << "input:       " << opts->input.getFullPathName().toStdString() << '\n'
               << "output:      " << opts->output.getFullPathName().toStdString() << '\n'
+              << "engine:      " << opts->engine << '\n'
               << "format:      " << sampleRate << " Hz, " << numChannels << " ch, "
               << numSamples << " samples (" << audioMs / 1000.0 << " s)\n"
               << "settings:    pitch " << opts->pitchSemitones << " st, formant "
