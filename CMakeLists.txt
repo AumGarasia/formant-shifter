@@ -10,17 +10,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(external/JUCE)
+# Third-party DSP: header-only, pinned submodules. SYSTEM keeps their warnings out of our build.
+add_library(signalsmith_dsp INTERFACE)
+target_include_directories(signalsmith_dsp SYSTEM INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-stretch
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-linear/include)
+
 # DSP engine library: JUCE-free, shared by the plugin, tests and offline harness
 add_library(fsdsp STATIC
     src/dsp/PitchFormantEngine.h
     src/dsp/PassthroughEngine.h
     src/dsp/PassthroughEngine.cpp
+    src/dsp/SignalsmithEngine.h
+    src/dsp/SignalsmithEngine.cpp
+    src/dsp/EngineFactory.h
+    src/dsp/EngineFactory.cpp
     src/dsp/OfflineRenderer.h
     src/dsp/OfflineRenderer.cpp)
 
 target_include_directories(fsdsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(fsdsp PUBLIC cxx_std_20)
-target_link_libraries(fsdsp PRIVATE juce::juce_recommended_warning_flags)
+target_link_libraries(fsdsp PRIVATE signalsmith_dsp juce::juce_recommended_warning_flags)
 
 juce_add_plugin(FormantShifter
     COMPANY_NAME                "Alias4garmore"        
@@ -63,6 +73,7 @@ include(Catch)
 add_executable(fsdsp_tests
     tests/PassthroughEngineTests.cpp
     tests/OfflineRendererTests.cpp
+    tests/SignalsmithEngineTests.cpp
     tests/support/DelayEngine.h)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
