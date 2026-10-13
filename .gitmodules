@@ -4,3 +4,9 @@
 [submodule "external/Catch2"]
 	path = external/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "external/signalsmith-stretch"]
+	path = external/signalsmith-stretch
+	url = https://github.com/Signalsmith-Audio/signalsmith-stretch.git
+[submodule "external/signalsmith-linear"]
+	path = external/signalsmith-linear
+	url = https://github.com/Signalsmith-Audio/linear.git
