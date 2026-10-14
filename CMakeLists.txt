@@ -80,7 +80,10 @@ add_executable(fsdsp_tests
     tests/support/RecordingEngine.h
     tests/support/DelayEngine.h
     tests/LinearRampTests.cpp
-    tests/EffectCoreTests.cpp)
+    tests/EffectCoreTests.cpp
+    tests/RealtimeSafetyTests.cpp
+    tests/support/AllocationCounter.cpp
+    tests/support/AllocationCounter.h)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)
