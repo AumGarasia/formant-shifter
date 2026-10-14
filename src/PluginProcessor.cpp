@@ -1,6 +1,5 @@
 #include "PluginProcessor.h"
 
-#include "dsp/ProcessChunked.h"
 #include "dsp/SignalsmithEngine.h"
 
 #include <algorithm>
@@ -11,20 +10,23 @@ PluginProcessor::PluginProcessor()
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       apvts (*this, nullptr, "Parameters", params::createLayout())
 {
-    pitchParam = apvts.getRawParameterValue (params::pitchID);
+    pitchParam = apvts.getRawParameterValue (params::pitchId);
     formantParam = apvts.getRawParameterValue (params::formantId);
+    mixParam = apvts.getRawParameterValue (params::mixId);
+    outputParam = apvts.getRawParameterValue (params::outputId);
 
-    jassert (pitchParam != nullptr && formantParam != nullptr);
+    jassert (pitchParam != nullptr && formantParam != nullptr
+             && mixParam != nullptr && outputParam != nullptr);
 }
 
 void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    preparedChannels = std::min (getTotalNumInputChannels(), fsdsp::kMaxChunkedChannels);
+    preparedChannels = getTotalNumInputChannels();
     preparedMaxBlock = std::max (samplesPerBlock, 1);
 
     if (preparedChannels < 1)
     {
-        engine.reset();
+        core.reset();
         return;
     }
 
@@ -34,22 +36,23 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     fsdsp::SignalsmithOptions options;
     options.compensatePitch = false;
 
-    engine = std::make_unique<fsdsp::SignalsmithEngine> (options);
-    engine->prepare (sampleRate, preparedMaxBlock, preparedChannels);
+    core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine> (options));
+    core->prepare (sampleRate, preparedMaxBlock, preparedChannels);
 
-    // A fresh engine knows nothing about the current parameter values.
-    appliedPitch = std::numeric_limits<float>::quiet_NaN();
-    appliedFormant = std::numeric_limits<float>::quiet_NaN();
-    updateEngineParameters();
+    // A fresh core knows nothing about the current parameter values. Push them,
+    // then snap the ramps so the first block starts exactly at those values.
+    appliedPitch = appliedFormant = appliedMix = appliedOutput = kNothingApplied;
+    updateCoreParameters();
+    core->reset();
 
     // Latency depends only on the sample rate, so it is identical on every prepare.
     // Never reset it to 0 elsewhere: each change makes the host restart the plugin.
-    setLatencySamples (engine->getLatencySamples());
+    setLatencySamples (core->getLatencySamples());
 }
 
 void PluginProcessor::releaseResources()
 {
-    engine.reset();
+    core.reset();
     preparedChannels = 0;
     preparedMaxBlock = 0;
 }
@@ -65,21 +68,35 @@ bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
     return in == out;   // mono->mono or stereo->stereo only
 }
 
-void PluginProcessor::updateEngineParameters()
+void PluginProcessor::updateCoreParameters()
 {
     const float pitch = pitchParam->load();
     const float formant = formantParam->load();
+    const float mix = mixParam->load() / 100.0f;
+    const float output = outputParam->load();
 
     if (! juce::exactlyEqual (pitch, appliedPitch))
     {
-        engine->setPitchSemitones (pitch);
+        core->setPitchSemitones (pitch);
         appliedPitch = pitch;
     }
 
     if (! juce::exactlyEqual (formant, appliedFormant))
     {
-        engine->setFormantSemitones (formant);
+        core->setFormantSemitones (formant);
         appliedFormant = formant;
+    }
+
+    if (! juce::exactlyEqual (mix, appliedMix))
+    {
+        core->setMix (mix);
+        appliedMix = mix;
+    }
+
+    if (! juce::exactlyEqual (output, appliedOutput))
+    {
+        core->setOutputGainDb (output);
+        appliedOutput = output;
     }
 }
 
@@ -96,13 +113,11 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
 
     // Not prepared, or the host changed the layout without re-preparing:
     // pass the audio through untouched instead of risking a bad call.
-    if (engine == nullptr || numChannels != preparedChannels || numSamples <= 0)
+    if (core == nullptr || numChannels != preparedChannels || numSamples <= 0)
         return;
 
-    updateEngineParameters();
-
-    fsdsp::processInPlaceChunked (*engine, buffer.getArrayOfWritePointers(),
-                                  numChannels, numSamples, preparedMaxBlock);
+    updateCoreParameters();
+    core->process (buffer.getArrayOfWritePointers(), numChannels, numSamples);
 }
 
 void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)

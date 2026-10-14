@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "Parameters.h"
-#include "dsp/PitchFormantEngine.h"
+#include "dsp/EffectCore.h"
 
 #include <atomic>
 #include <limits>
@@ -39,19 +39,24 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
-    void updateEngineParameters();
+    void updateCoreParameters();
 
     juce::AudioProcessorValueTreeState apvts;
     std::atomic<float>* pitchParam = nullptr;
     std::atomic<float>* formantParam = nullptr;
+    std::atomic<float>* mixParam = nullptr;
+    std::atomic<float>* outputParam = nullptr;
 
-    std::unique_ptr<fsdsp::PitchFormantEngine> engine;
+    std::unique_ptr<fsdsp::EffectCore> core;
     int preparedChannels = 0;
     int preparedMaxBlock = 0;
 
-    // Last values pushed to the engine (NaN = "nothing applied yet").
-    float appliedPitch = std::numeric_limits<float>::quiet_NaN();
-    float appliedFormant = std::numeric_limits<float>::quiet_NaN();
+    // Last values pushed to the core (NaN = "nothing applied yet").
+    static constexpr float kNothingApplied = std::numeric_limits<float>::quiet_NaN();
+    float appliedPitch = kNothingApplied;
+    float appliedFormant = kNothingApplied;
+    float appliedMix = kNothingApplied;
+    float appliedOutput = kNothingApplied;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
