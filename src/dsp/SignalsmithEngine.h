@@ -13,7 +13,7 @@ struct SignalsmithOptions
     bool splitComputation = false;
 
     /** Forwarded to the library's formant setter. We'll settle the right value by ear. */
-    bool compensatePitch = false;
+    bool compensatePitch = true;
 };
 
 /** PitchFormantEngine backed by Signalsmith Stretch (MIT). */

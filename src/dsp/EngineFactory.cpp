@@ -8,7 +8,7 @@ namespace fsdsp
 
 std::vector<std::string> engineNames()
 {
-    return { "passthrough", "signalsmith", "signalsmith-compensated" };
+    return { "passthrough", "signalsmith", "signalsmith-coupled" };
 }
 
 std::unique_ptr<PitchFormantEngine> makeEngine (const std::string& name)
@@ -17,10 +17,10 @@ std::unique_ptr<PitchFormantEngine> makeEngine (const std::string& name)
 
     if (name == "signalsmith")  return std::make_unique<SignalsmithEngine>();
 
-    if (name == "signalsmith-compensated")
+    if (name == "signalsmith-coupled")
     {
         SignalsmithOptions options;
-        options.compensatePitch = true;
+        options.compensatePitch = false;
         return std::make_unique<SignalsmithEngine> (options);
     }
 

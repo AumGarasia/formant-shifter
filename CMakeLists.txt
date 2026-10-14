@@ -83,7 +83,9 @@ add_executable(fsdsp_tests
     tests/EffectCoreTests.cpp
     tests/RealtimeSafetyTests.cpp
     tests/support/AllocationCounter.cpp
-    tests/support/AllocationCounter.h)
+    tests/support/AllocationCounter.h
+    tests/support/VowelProbe.h
+    tests/FormantIndependenceTests.cpp)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)
@@ -111,5 +113,13 @@ target_link_libraries(offline_render
         juce::juce_recommended_warning_flags)
 
 set_target_properties(offline_render PROPERTIES
+    XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-")
+
+# --- Engine probe: measures pitch/formant behaviour on a synthetic vowel ---
+add_executable(engine_probe tools/probe/main.cpp)
+target_include_directories(engine_probe PRIVATE tests/support)
+target_link_libraries(engine_probe PRIVATE fsdsp)
+set_target_properties(engine_probe PROPERTIES
     XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-")

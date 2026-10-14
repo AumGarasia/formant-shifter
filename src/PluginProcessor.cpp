@@ -30,11 +30,9 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         return;
     }
 
-    // OPEN DECISIONS (settle by ear in the offline harness):
-    //   - compensatePitch: how formant shifting combines with pitch shifting
-    //   - block size / latency: the preset uses 120 ms blocks
-    fsdsp::SignalsmithOptions options;
-    options.compensatePitch = false;
+    // Engine defaults: formants independent of pitch (measured with engine_probe) and the
+    // library's 120 ms preset blocks. OPEN DECISION: block size / latency.
+    core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine>());
 
     core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine> (options));
     core->prepare (sampleRate, preparedMaxBlock, preparedChannels);
