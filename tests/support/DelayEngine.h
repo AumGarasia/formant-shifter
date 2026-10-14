@@ -9,11 +9,13 @@
 namespace testsupport
 {
 
-/** Delays its input by exactly `delay` samples. Reports that as its latency. */
+/** Delays its input by exactly `delay` samples and scales it by `gain`.
+    Reports the delay as its latency. */
 class DelayEngine final : public fsdsp::PitchFormantEngine
 {
 public:
-    explicit DelayEngine (int delaySamples) : delay (delaySamples) {}
+    explicit DelayEngine (int delaySamples, float outputGain = 1.0f)
+        : delay (delaySamples), gain (outputGain) {}
 
     void prepare (double, int, int numChannels) override
     {
@@ -26,6 +28,7 @@ public:
     {
         for (auto& line : lines)
             std::fill (line.begin(), line.end(), 0.0f);
+
         pos = 0;
     }
 
@@ -46,11 +49,11 @@ public:
 
                 if (line.empty())
                 {
-                    outputs[ch][i] = x;
+                    outputs[ch][i] = gain * x;
                     continue;
                 }
 
-                outputs[ch][i] = line[p];
+                outputs[ch][i] = gain * line[p];
                 line[p] = x;
                 p = (p + 1) % line.size();
             }
@@ -64,6 +67,7 @@ public:
 
 private:
     int delay;
+    float gain;
     std::size_t pos = 0;
     std::vector<std::vector<float>> lines;
 };

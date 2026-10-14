@@ -28,7 +28,10 @@ add_library(fsdsp STATIC
     src/dsp/OfflineRenderer.h
     src/dsp/OfflineRenderer.cpp
     src/dsp/ProcessChunked.h
-    src/dsp/ProcessChunked.cpp)
+    src/dsp/ProcessChunked.cpp
+    src/dsp/LinearRamp.h
+    src/dsp/EffectCore.h
+    src/dsp/EffectCore.cpp)
 
 target_include_directories(fsdsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(fsdsp PUBLIC cxx_std_20)
@@ -78,7 +81,9 @@ add_executable(fsdsp_tests
     tests/OfflineRendererTests.cpp
     tests/SignalsmithEngineTests.cpp
     tests/support/RecordingEngine.h
-    tests/support/DelayEngine.h)
+    tests/support/DelayEngine.h
+    tests/LinearRampTests.cpp
+    tests/EffectCoreTests.cpp)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)
