@@ -11,6 +11,7 @@ inline constexpr const char* pitchId = "Pitch";
 inline constexpr const char* formantId = "Formant";
 inline constexpr const char* mixId = "Mix";
 inline constexpr const char* outputId = "Output";
+inline constexpr const char* formantLinkId = "FormantLink";
 
 inline constexpr float pitchRangeSemitones = 24.0f;
 inline constexpr float formantRangeSemitones = 12.0f;
@@ -31,6 +32,9 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
     layout.add (std::make_unique<Param> (juce::ParameterID { formantId, 1}, "Formant",
                                          juce::NormalisableRange<float> (-formantRangeSemitones, formantRangeSemitones, 0.01f),
                                          0.0f, Attrs().withLabel ("st")));
+    
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { formantLinkId, 1 },
+                                                        "Formant Link", false));
     
     layout.add (std::make_unique<Param> (juce::ParameterID { mixId, 1}, "Mix",
                                          juce::NormalisableRange<float> (0.0f, 100.0f, 0.01f),

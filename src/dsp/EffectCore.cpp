@@ -37,8 +37,6 @@ void EffectCore::prepare (double sampleRate, int maxBlockSize, int channels)
     rampSamples = std::max (1, static_cast<int> (std::lround (sampleRate * kRampSeconds)));
 
     engine->prepare (sampleRate, maxBlock, numChannels);
-    engine->setPitchSemitones (pitch);
-    engine->setFormantSemitones (formant);
     latency = std::max (0, engine->getLatencySamples());
 
     const auto channelCount = static_cast<std::size_t> (numChannels);
@@ -48,6 +46,7 @@ void EffectCore::prepare (double sampleRate, int maxBlockSize, int channels)
     dryPos = 0;
 
     prepared = true;
+    applyToEngine();
     reset();
 }
 
@@ -66,20 +65,37 @@ void EffectCore::reset()
     gainRamp.snapTo (gainRamp.getTarget());
 }
 
+float EffectCore::effectiveFormantSemitones() const
+{
+    const float total = formant + (formantFollowsPitch ? pitch : 0.0f);
+    return std::clamp (total, -kMaxFormantShiftSemitones, kMaxFormantShiftSemitones);
+}
+
+void EffectCore::applyToEngine()
+{
+    if (! prepared)
+        return;
+
+    engine->setPitchSemitones (pitch);
+    engine->setFormantSemitones (effectiveFormantSemitones());
+}
+
 void EffectCore::setPitchSemitones (float semitones)
 {
     pitch = semitones;
-
-    if (prepared)
-        engine->setPitchSemitones (semitones);
+    applyToEngine();
 }
 
 void EffectCore::setFormantSemitones (float semitones)
 {
     formant = semitones;
+    applyToEngine();
+}
 
-    if (prepared)
-        engine->setFormantSemitones (semitones);
+void EffectCore::setFormantFollowsPitch (bool follows)
+{
+    formantFollowsPitch = follows;
+    applyToEngine();
 }
 
 void EffectCore::setMix (float mix)

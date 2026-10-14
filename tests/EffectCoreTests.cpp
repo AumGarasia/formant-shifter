@@ -213,3 +213,70 @@ TEST_CASE ("EffectCore never hands the engine more than the prepared maximum", "
     REQUIRE (recorder->totalFrames == 1000);
     REQUIRE (recorder->calls == 8);     // ceil (1000 / 128)
 }
+
+TEST_CASE ("EffectCore with formant link adds the pitch to the formant", "[core][link]")
+{
+    auto engine = std::make_unique<testsupport::RecordingEngine>();
+    auto* recorder = engine.get();
+    fsdsp::EffectCore core (std::move (engine));
+    core.prepare (44100.0, 512, 2);
+
+    core.setFormantFollowsPitch (true);
+    core.setPitchSemitones (5.0f);
+    core.setFormantSemitones (2.0f);
+
+    REQUIRE (recorder->lastPitch == Catch::Approx (5.0f));
+    REQUIRE (recorder->lastFormant == Catch::Approx (7.0f));       // 5 + 2
+
+    core.setPitchSemitones (-3.0f);                                // the formant control is untouched
+    REQUIRE (recorder->lastFormant == Catch::Approx (-1.0f));      // -3 + 2
+
+    core.setFormantFollowsPitch (false);                           // independent again
+    REQUIRE (recorder->lastPitch == Catch::Approx (-3.0f));
+    REQUIRE (recorder->lastFormant == Catch::Approx (2.0f));
+}
+
+TEST_CASE ("EffectCore without formant link ignores the pitch for the formant", "[core][link]")
+{
+    auto engine = std::make_unique<testsupport::RecordingEngine>();
+    auto* recorder = engine.get();
+    fsdsp::EffectCore core (std::move (engine));
+    core.prepare (44100.0, 512, 2);
+
+    core.setFormantSemitones (2.0f);
+    core.setPitchSemitones (10.0f);
+
+    REQUIRE (recorder->lastFormant == Catch::Approx (2.0f));
+}
+
+TEST_CASE ("EffectCore applies the formant link when it was set before prepare", "[core][link]")
+{
+    auto engine = std::make_unique<testsupport::RecordingEngine>();
+    auto* recorder = engine.get();
+    fsdsp::EffectCore core (std::move (engine));
+
+    core.setFormantFollowsPitch (true);
+    core.setPitchSemitones (4.0f);
+    core.setFormantSemitones (1.0f);
+    core.prepare (44100.0, 512, 2);
+
+    REQUIRE (recorder->lastFormant == Catch::Approx (5.0f));
+}
+
+TEST_CASE ("EffectCore clamps the linked formant shift", "[core][link]")
+{
+    auto engine = std::make_unique<testsupport::RecordingEngine>();
+    auto* recorder = engine.get();
+    fsdsp::EffectCore core (std::move (engine));
+    core.prepare (44100.0, 512, 2);
+
+    core.setFormantFollowsPitch (true);
+
+    core.setPitchSemitones (24.0f);
+    core.setFormantSemitones (12.0f);                              // 36 -> clamped
+    REQUIRE (recorder->lastFormant == Catch::Approx (24.0f));
+
+    core.setPitchSemitones (-24.0f);
+    core.setFormantSemitones (-12.0f);                             // -36 -> clamped
+    REQUIRE (recorder->lastFormant == Catch::Approx (-24.0f));
+}

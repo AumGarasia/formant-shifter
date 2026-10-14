@@ -46,6 +46,7 @@ private:
     std::atomic<float>* formantParam = nullptr;
     std::atomic<float>* mixParam = nullptr;
     std::atomic<float>* outputParam = nullptr;
+    std::atomic<float>* formantLinkParam = nullptr;
 
     std::unique_ptr<fsdsp::EffectCore> core;
     int preparedChannels = 0;
@@ -57,6 +58,7 @@ private:
     float appliedFormant = kNothingApplied;
     float appliedMix = kNothingApplied;
     float appliedOutput = kNothingApplied;
+    int appliedLink = -1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };

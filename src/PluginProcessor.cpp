@@ -14,6 +14,7 @@ PluginProcessor::PluginProcessor()
     formantParam = apvts.getRawParameterValue (params::formantId);
     mixParam = apvts.getRawParameterValue (params::mixId);
     outputParam = apvts.getRawParameterValue (params::outputId);
+    formantLinkParam = apvts.getRawParameterValue (params::formantLinkId);
 
     jassert (pitchParam != nullptr && formantParam != nullptr
              && mixParam != nullptr && outputParam != nullptr);
@@ -34,12 +35,13 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // library's 120 ms preset blocks. OPEN DECISION: block size / latency.
     core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine>());
 
-    core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine> (options));
+    // core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine> (options));
     core->prepare (sampleRate, preparedMaxBlock, preparedChannels);
 
     // A fresh core knows nothing about the current parameter values. Push them,
     // then snap the ramps so the first block starts exactly at those values.
     appliedPitch = appliedFormant = appliedMix = appliedOutput = kNothingApplied;
+    appliedLink = -1;
     updateCoreParameters();
     core->reset();
 
@@ -72,6 +74,13 @@ void PluginProcessor::updateCoreParameters()
     const float formant = formantParam->load();
     const float mix = mixParam->load() / 100.0f;
     const float output = outputParam->load();
+    const int link = formantLinkParam->load() >= 0.5f ? 1 : 0;
+
+    if (link != appliedLink)
+    {
+        core->setFormantFollowsPitch (link == 1);
+        appliedLink = link;
+    }
 
     if (! juce::exactlyEqual (pitch, appliedPitch))
     {

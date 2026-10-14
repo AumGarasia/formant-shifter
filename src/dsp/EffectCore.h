@@ -30,6 +30,20 @@ public:
 
     void setPitchSemitones (float semitones);
     void setFormantSemitones (float semitones);
+    
+/** 
+    When on, the formant control becomes an offset on top of the pitch shift: the
+    engine's formant shift is pitch + formant, so formants move with the pitch
+    (the classic "resampling" sound). When off, the two are independent.
+*/ 
+    void setFormantFollowsPitch (bool follows);
+
+/** 
+    Largest formant shift ever sent to the engine, Linked mode can add pitch
+    (up to 24) to formant (up to 12), so the sum is clamped to this limit.
+*/
+    static constexpr float kMaxFormantShiftSemitones = 24.0f;
+
     void setMix (float mix);                    // 0 = complete dry signal, 1 = complete wet signa;
     void setOutputGainDb (float decibels);
 
@@ -41,6 +55,8 @@ public:
 
 private:
     void processChunk (float* const* channels, int numFrames);
+    float effectiveFormantSemitones() const;
+    void applyToEngine();
     
     std::unique_ptr<PitchFormantEngine> engine;
 
@@ -52,6 +68,7 @@ private:
 
     float pitch = 0.0f;
     float formant = 0.0f;
+    bool formantFollowsPitch = false;
     LinearRamp mixRamp;
     LinearRamp gainRamp;
 

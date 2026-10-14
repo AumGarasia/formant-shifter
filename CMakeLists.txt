@@ -84,6 +84,8 @@ add_executable(fsdsp_tests
     tests/RealtimeSafetyTests.cpp
     tests/support/AllocationCounter.cpp
     tests/support/AllocationCounter.h
+    tests/ExtremeSettingsTests.cpp
+    tests/support/TestSignals.h
     tests/support/VowelProbe.h
     tests/FormantIndependenceTests.cpp)
 
