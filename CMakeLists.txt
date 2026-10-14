@@ -27,8 +27,6 @@ add_library(fsdsp STATIC
     src/dsp/EngineFactory.cpp
     src/dsp/OfflineRenderer.h
     src/dsp/OfflineRenderer.cpp
-    src/dsp/ProcessChunked.h
-    src/dsp/ProcessChunked.cpp
     src/dsp/LinearRamp.h
     src/dsp/EffectCore.h
     src/dsp/EffectCore.cpp)
@@ -77,7 +75,6 @@ include(Catch)
 
 add_executable(fsdsp_tests
     tests/PassthroughEngineTests.cpp
-    tests/ProcessChunkedTests.cpp
     tests/OfflineRendererTests.cpp
     tests/SignalsmithEngineTests.cpp
     tests/support/RecordingEngine.h

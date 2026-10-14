@@ -197,3 +197,19 @@ TEST_CASE ("EffectCore forwards pitch and formant to the engine", "[core]")
 
     REQUIRE (recorder->lastPitch == Catch::Approx (7.0f));
 }
+
+TEST_CASE ("EffectCore never hands the engine more than the prepared maximum", "[core]")
+{
+    auto engine = std::make_unique<testsupport::RecordingEngine>();
+    auto* recorder = engine.get();
+    fsdsp::EffectCore core (std::move (engine));
+    core.prepare (44100.0, 128, 2);
+
+    std::vector<float> left (1000), right (1000);
+    float* channels[] = { left.data(), right.data() };
+    core.process (channels, 2, 1000);
+
+    REQUIRE (recorder->largest == 128);
+    REQUIRE (recorder->totalFrames == 1000);
+    REQUIRE (recorder->calls == 8);     // ceil (1000 / 128)
+}
