@@ -28,7 +28,7 @@ TEST_CASE ("makeEngine parses the block length suffix", "[factory]")
     REQUIRE (fsdsp::makeEngine ("passthrough@60") == nullptr);       // meaningless here
 }
 
-TEST_CASE ("The block length scales the latency", "[factory][signalsmith]")
+TEST_CASE ("The block length scales the latency, and the default is 80 ms", "[factory][signalsmith]")
 {
     auto latencyOf = [] (const char* name)
     {
@@ -37,10 +37,12 @@ TEST_CASE ("The block length scales the latency", "[factory][signalsmith]")
         return engine->getLatencySamples();
     };
 
-    const int preset = latencyOf ("signalsmith");
-    const int explicit120 = latencyOf ("signalsmith@120");
-    const int sixty = latencyOf ("signalsmith@60");
+    const int byDefault = latencyOf ("signalsmith");
+    const int eighty = latencyOf ("signalsmith@80");
+    const int forty = latencyOf ("signalsmith@40");
+    const int oneTwenty = latencyOf ("signalsmith@120");
 
-    REQUIRE (std::abs (explicit120 - preset) <= 2);          // configure() matches the library preset
-    REQUIRE (std::abs (sixty - preset / 2) <= preset / 20);  // roughly proportional (within 5%)
+    REQUIRE (std::abs (byDefault - eighty) <= 2);                         // the shipping default
+    REQUIRE (std::abs (forty - eighty / 2) <= eighty / 20);               // roughly proportional (within 5%)
+    REQUIRE (std::abs (oneTwenty - eighty * 3 / 2) <= eighty / 20);
 }

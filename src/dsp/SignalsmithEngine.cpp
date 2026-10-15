@@ -51,19 +51,14 @@ void SignalsmithEngine::prepare (double sampleRate, int maxBlockSize, int numCha
     s.numChannels = numChannels;
     s.maxBlockSize = maxBlockSize;
 
-        if (s.options.blockMs.has_value())
-    {
-        const double ms = std::clamp (*s.options.blockMs, 10.0, 500.0);
-        const int block = std::max (64, static_cast<int> (sampleRate * ms / 1000.0));
-        const int interval = std::max (16, block / 4);
+    // The library's spectral analysis window. This is unrelated to the host's buffer size.
+    const double analysisMs = std::clamp (s.options.blockMs, 10.0, 500.0);
+    const int analysisBlock = std::max (64, static_cast<int> (sampleRate * analysisMs / 1000.0));
+    const int analysisInterval = std::max (16, analysisBlock / 4);
 
-        s.stretch.configure (numChannels, block, interval, s.options.splitComputation);
-    }
-    else
-    {
-        s.stretch.presetDefault (numChannels, static_cast<float> (sampleRate), s.options.splitComputation);
-    }
+    s.stretch.configure (numChannels, analysisBlock, analysisInterval, s.options.splitComputation);
 
+    // Scratch buffers sized for the largest host block we will be handed.
     const auto channels = static_cast<std::size_t> (numChannels);
     const auto block = static_cast<std::size_t> (maxBlockSize);
 

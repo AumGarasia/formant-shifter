@@ -3,7 +3,6 @@
 #include "PitchFormantEngine.h"
 
 #include <memory>
-#include <optional>
 
 namespace fsdsp
 {
@@ -18,10 +17,12 @@ struct SignalsmithOptions
         formants follow the pitch shift. */
     bool compensatePitch = true;
 
-    /** Analysis block length in milliseconds. Unset means the library's default preset
-        (120 ms). Latency is roughly proportional to this. Shorter blocks resolve low
-        notes less well, so they can smear and warble. The interval is a quarter of the block. */
-    std::optional<double> blockMs;
+    /** Analysis block length in milliseconds; the interval is a quarter of it. Latency is
+    roughly proportional to this. 80 ms was chosen from measurements (engine_probe
+    "blocks") and listening: no measurable loss against the library's 120 ms preset,
+    even on an 80 Hz voice, and slightly less phasing, for 40 ms less delay. At 60 ms
+    low voices start to smear, and at 40 ms they fall apart. */
+    double blockMs = 80.0;
 };
 
 /** PitchFormantEngine backed by Signalsmith Stretch (MIT). */

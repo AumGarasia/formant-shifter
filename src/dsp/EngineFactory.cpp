@@ -62,7 +62,10 @@ std::unique_ptr<PitchFormantEngine> makeEngine (const std::string& name)
     {
         SignalsmithOptions options;
         options.compensatePitch = (base == "signalsmith"); // "-coupled": formants follow the pitch shift
-        options.blockMs = blockMs;
+
+        if (blockMs.has_value())
+            options.blockMs = *blockMs;                    // no suffix: keep the 80 ms default
+
         return std::make_unique<SignalsmithEngine> (options);
     }
 

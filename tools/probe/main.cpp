@@ -1,6 +1,7 @@
 // Measures how an engine's pitch and formant controls behave on a synthetic vowel.
-//   engine_probe formants   independence of pitch and formant controls (default)
-//   engine_probe blocks     latency / accuracy / purity at different Signalsmith block lengths
+//   engine_probe formants            independence of pitch and formant controls (default)
+//   engine_probe blocks [semitones]  latency / accuracy / purity at different Signalsmith
+//                                    block lengths, for a given pitch shift (default +7)
 // Run it in a Release build.
 
 #include "VowelProbe.h"
@@ -11,6 +12,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +20,7 @@
 namespace
 {
 constexpr int kBlock = 512;
+constexpr float kMaxPitchSemitones = 24.0f;
 
 struct Rendered
 {
@@ -77,9 +80,8 @@ int runFormantTable()
     return 0;
 }
 
-int runBlockTable()
+int runBlockTable (float pitch)
 {
-    constexpr float pitch = 7.0f;
     const double audioSeconds = static_cast<double> (vowelprobe::kLength) / vowelprobe::kSampleRate;
 
     for (const double f0 : { 80.0, 140.0, 220.0 })
@@ -89,8 +91,9 @@ int runBlockTable()
         const double f0In = vowelprobe::estimateF0 (input);
         const double centroidIn = vowelprobe::spectralCentroid (inputSpectrum);
 
-        std::printf ("\nvowel on %.0f Hz (input purity %.1f%%), pitch +7, formant 0\n",
-                     f0, 100.0 * vowelprobe::harmonicPurity (inputSpectrum, f0In));
+        std::printf ("\nvowel on %.0f Hz (input purity %.1f%%), pitch %+.0f, formant 0\n",
+                     f0, 100.0 * vowelprobe::harmonicPurity (inputSpectrum, f0In),
+                     static_cast<double> (pitch));
         std::printf ("%-18s %10s %9s %9s %9s %10s\n",
                      "engine", "latency ms", "f0 ratio", "formant", "purity %", "x realtime");
 
@@ -123,8 +126,25 @@ int main (int argc, char* argv[])
         return runFormantTable();
 
     if (mode == "blocks")
-        return runBlockTable();
+    {
+        float pitch = 7.0f;
 
-    std::fprintf (stderr, "usage: engine_probe [formants|blocks]\n");
+        if (argc > 2)
+        {
+            char* end = nullptr;
+            pitch = std::strtof (argv[2], &end);
+
+            if (end == argv[2] || *end != '\0' || ! std::isfinite (pitch) || std::fabs (pitch) > kMaxPitchSemitones)
+            {
+                std::fprintf (stderr, "error: pitch must be a number between -%.0f and %.0f\n",
+                              static_cast<double> (kMaxPitchSemitones), static_cast<double> (kMaxPitchSemitones));
+                return 1;
+            }
+        }
+
+        return runBlockTable (pitch);
+    }
+
+    std::fprintf (stderr, "usage: engine_probe [formants | blocks [semitones]]\n");
     return 1;
 }

@@ -31,8 +31,8 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         return;
     }
 
-    // Engine defaults: formants independent of pitch (measured with engine_probe) and the
-    // library's 120 ms preset blocks. OPEN DECISION: block size / latency.
+    // Engine defaults: formants independent of pitch, and 80 ms analysis blocks. Both were
+    // chosen from measurements and listening (see SignalsmithOptions).
     core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine>());
 
     // core = std::make_unique<fsdsp::EffectCore> (std::make_unique<fsdsp::SignalsmithEngine> (options));

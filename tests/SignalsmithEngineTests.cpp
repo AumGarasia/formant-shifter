@@ -43,16 +43,17 @@ TEST_CASE ("SignalsmithEngine reports its latency accurately", "[signalsmith]")
         bool splitComputation;
     };
 
-    const auto config = GENERATE (Config { "default preset", std::nullopt, false },
+    const auto config = GENERATE (Config { "default (80 ms)", std::nullopt, false },
+                                  Config { "120 ms blocks", 120.0, false },
                                   Config { "60 ms blocks", 60.0, false },
-                                  Config { "40 ms blocks", 40.0, false },
                                   Config { "split computation", std::nullopt, true });
 
     constexpr std::size_t burstStart = 3000;
     constexpr std::size_t burstLength = 256;
 
     fsdsp::SignalsmithOptions options;
-    options.blockMs = config.blockMs;
+    if (config.blockMs.has_value())
+        options.blockMs = *config.blockMs;
     options.splitComputation = config.splitComputation;
 
     fsdsp::SignalsmithEngine engine (options);
