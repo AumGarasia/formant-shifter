@@ -67,8 +67,7 @@ void EffectCore::reset()
 
 float EffectCore::effectiveFormantSemitones() const
 {
-    const float total = formant + (formantFollowsPitch ? pitch : 0.0f);
-    return std::clamp (total, -kMaxFormantShiftSemitones, kMaxFormantShiftSemitones);
+    return effectiveFormant (pitch, formant, formantFollowsPitch).semitones;
 }
 
 void EffectCore::applyToEngine()

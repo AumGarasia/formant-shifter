@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LinearRamp.h"
+#include "FormantRouting.h"
 #include "PitchFormantEngine.h"
 
 #include <cstddef>
@@ -37,12 +38,6 @@ public:
     (the classic "resampling" sound). When off, the two are independent.
 */ 
     void setFormantFollowsPitch (bool follows);
-
-/** 
-    Largest formant shift ever sent to the engine, Linked mode can add pitch
-    (up to 24) to formant (up to 12), so the sum is clamped to this limit.
-*/
-    static constexpr float kMaxFormantShiftSemitones = 24.0f;
 
     void setMix (float mix);                    // 0 = complete dry signal, 1 = complete wet signa;
     void setOutputGainDb (float decibels);
