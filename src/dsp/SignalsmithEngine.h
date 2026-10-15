@@ -3,6 +3,7 @@
 #include "PitchFormantEngine.h"
 
 #include <memory>
+#include <optional>
 
 namespace fsdsp
 {
@@ -12,8 +13,15 @@ struct SignalsmithOptions
     /** Spreads FFT work evenly across calls, at the cost of one extra interval of latency. */
     bool splitComputation = false;
 
-    /** Forwarded to the library's formant setter. We'll settle the right value by ear. */
+    /** Measured with engine_probe: with this on, the formant control is independent of
+        the pitch control (formants stay put when only pitch moves). With it off,
+        formants follow the pitch shift. */
     bool compensatePitch = true;
+
+    /** Analysis block length in milliseconds. Unset means the library's default preset
+        (120 ms). Latency is roughly proportional to this. Shorter blocks resolve low
+        notes less well, so they can smear and warble. The interval is a quarter of the block. */
+    std::optional<double> blockMs;
 };
 
 /** PitchFormantEngine backed by Signalsmith Stretch (MIT). */

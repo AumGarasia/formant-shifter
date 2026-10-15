@@ -87,7 +87,8 @@ add_executable(fsdsp_tests
     tests/ExtremeSettingsTests.cpp
     tests/support/TestSignals.h
     tests/support/VowelProbe.h
-    tests/FormantIndependenceTests.cpp)
+    tests/FormantIndependenceTests.cpp
+    tests/EngineFactoryTests.cpp)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)

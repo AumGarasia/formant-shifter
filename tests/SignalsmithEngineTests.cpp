@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 #include "dsp/OfflineRenderer.h"
 #include "dsp/SignalsmithEngine.h"
@@ -33,12 +34,28 @@ fsdsp::PlanarAudio makeNoise (std::size_t numChannels, std::size_t numSamples, s
 
 } // namespace
 
-TEST_CASE("SignalsmithEngine reports its latency accurately", "[signalsmith]")
+TEST_CASE ("SignalsmithEngine reports its latency accurately", "[signalsmith]")
 {
+    struct Config
+    {
+        const char* name;
+        std::optional<double> blockMs;
+        bool splitComputation;
+    };
+
+    const auto config = GENERATE (Config { "default preset", std::nullopt, false },
+                                  Config { "60 ms blocks", 60.0, false },
+                                  Config { "40 ms blocks", 40.0, false },
+                                  Config { "split computation", std::nullopt, true });
+
     constexpr std::size_t burstStart = 3000;
     constexpr std::size_t burstLength = 256;
 
-    fsdsp::SignalsmithEngine engine;
+    fsdsp::SignalsmithOptions options;
+    options.blockMs = config.blockMs;
+    options.splitComputation = config.splitComputation;
+
+    fsdsp::SignalsmithEngine engine (options);
     engine.prepare (44100.0, static_cast<int> (kBlock), 1);
 
     const auto latency = static_cast<std::size_t> (engine.getLatencySamples());
@@ -66,7 +83,7 @@ TEST_CASE("SignalsmithEngine reports its latency accurately", "[signalsmith]")
     double burstEnergy = 0.0;
     for (const float x : burst)
         burstEnergy += static_cast<double> (x) * static_cast<double> (x);
-    
+
     std::size_t bestLag = 0;
     double bestScore = -1.0;
 
@@ -75,7 +92,7 @@ TEST_CASE("SignalsmithEngine reports its latency accurately", "[signalsmith]")
         double score = 0.0;
         for (std::size_t i = 0; i < burstLength; ++i)
             score += static_cast<double> (burst[i]) * static_cast<double> (output[burstStart + lag + i]);
-        
+
         if (score > bestScore)
         {
             bestScore = score;
@@ -83,9 +100,9 @@ TEST_CASE("SignalsmithEngine reports its latency accurately", "[signalsmith]")
         }
     }
 
-    INFO ("Reported latency: " << latency << ", measured: " << bestLag
+    INFO ("config: " << config.name << ", reported latency: " << latency << ", measured: " << bestLag
           << ", match quality: " << bestScore / burstEnergy << " (1.0 = perfect copy)");
-    
+
     const auto error = static_cast<std::ptrdiff_t> (bestLag) - static_cast<std::ptrdiff_t> (latency);
     REQUIRE (std::abs (error) <= 2);
 }

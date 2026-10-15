@@ -9,7 +9,11 @@
 namespace fsdsp
 {
 
-// Names accepted by makeEngine(), for help text.
+/** 
+    Names accepted by makeEngine(), for help text. The two signalsmith engines also
+    accept an "@<ms>" suffix that sets the analysis block length, for example
+    "signalsmith@60" (10 to 500 ms). 
+*/
 std::vector<std::string> engineNames();
 
 // Returns nullptr if 'name' is not recognized.

@@ -6,8 +6,8 @@
 #include <vector>
 
 // Synthetic-vowel measurement helpers, shared by the engine_probe tool and the
-// formant tests. The spectral envelope is fixed and the harmonics sit on a 140 Hz
-// fundamental, so any change in the output's pitch or spectral centroid is caused
+// formant tests. The spectral envelope is fixed and the harmonics sit on a chosen
+// fundamental, so any change in the output's pitch or spectral shape is caused
 // by the processing.
 namespace vowelprobe
 {
@@ -37,14 +37,14 @@ inline double envelope (double hz)
     return sum;
 }
 
-// Additive synthesis: harmonics of kBaseF0 shaped by the envelope above.
-inline std::vector<float> makeVowel()
+// Additive synthesis: harmonics of f0 shaped by the envelope above.
+inline std::vector<float> makeVowel (double f0 = kBaseF0)
 {
     std::vector<float> out (kLength, 0.0f);
 
-    for (int h = 1; h * kBaseF0 < 8000.0; ++h)
+    for (int h = 1; h * f0 < 8000.0; ++h)
     {
-        const double hz = h * kBaseF0;
+        const double hz = h * f0;
         const double amp = 0.05 * envelope (hz);
         const double w = 2.0 * kPi * hz / kSampleRate;
         const double cw = std::cos (w), sw = std::sin (w);
@@ -62,12 +62,12 @@ inline std::vector<float> makeVowel()
     return out;
 }
 
-// Fundamental frequency by autocorrelation (60 to 600 Hz search range), with
+// Fundamental frequency by autocorrelation (40 to 600 Hz search range), with
 // parabolic interpolation of the peak.
 inline double estimateF0 (const std::vector<float>& x)
 {
     const auto minLag = static_cast<std::size_t> (kSampleRate / 600.0);
-    const auto maxLag = static_cast<std::size_t> (kSampleRate / 60.0);
+    const auto maxLag = static_cast<std::size_t> (kSampleRate / 40.0);
 
     std::vector<double> ac (maxLag + 2, 0.0);
 
@@ -100,9 +100,8 @@ inline double estimateF0 (const std::vector<float>& x)
     return 0.0;
 }
 
-// Magnitude-weighted mean frequency below 5 kHz (DFT with a Hann window): a rough
-// proxy for where the formants sit.
-inline double spectralCentroid (const std::vector<float>& x)
+// Magnitude spectrum below 5 kHz (DFT with a Hann window), indexed by bin number.
+inline std::vector<double> magnitudeSpectrum (const std::vector<float>& x)
 {
     const auto maxBin = static_cast<std::size_t> (5000.0 * static_cast<double> (kWindow) / kSampleRate);
 
@@ -113,7 +112,7 @@ inline double spectralCentroid (const std::vector<float>& x)
         windowed[n] = static_cast<double> (x[kMeasureStart + n]) * hann;
     }
 
-    double weighted = 0.0, total = 0.0;
+    std::vector<double> magnitudes (maxBin + 1, 0.0);
 
     for (std::size_t k = 1; k <= maxBin; ++k)
     {
@@ -131,12 +130,57 @@ inline double spectralCentroid (const std::vector<float>& x)
             c = nextC;
         }
 
-        const double magnitude = std::sqrt (re * re + im * im);
-        weighted += magnitude * static_cast<double> (k) * kSampleRate / static_cast<double> (kWindow);
-        total += magnitude;
+        magnitudes[k] = std::sqrt (re * re + im * im);
+    }
+
+    return magnitudes;
+}
+
+// Magnitude-weighted mean frequency: a rough proxy for where the formants sit.
+inline double spectralCentroid (const std::vector<double>& magnitudes)
+{
+    double weighted = 0.0, total = 0.0;
+
+    for (std::size_t k = 1; k < magnitudes.size(); ++k)
+    {
+        weighted += magnitudes[k] * static_cast<double> (k) * kSampleRate / static_cast<double> (kWindow);
+        total += magnitudes[k];
     }
 
     return total > 0.0 ? weighted / total : 0.0;
+}
+
+inline double spectralCentroid (const std::vector<float>& x)
+{
+    return spectralCentroid (magnitudeSpectrum (x));
+}
+
+// Fraction of spectral power that lies close to a harmonic of f0 (0 to 1). A clean
+// harmonic sound scores high; smearing and warble spread energy between the
+// harmonics and pull it down. Only meaningful as a comparison against another
+// measurement of the same kind of signal.
+inline double harmonicPurity (const std::vector<double>& magnitudes, double f0)
+{
+    if (f0 <= 0.0)
+        return 0.0;
+
+    const double binHz = kSampleRate / static_cast<double> (kWindow);
+    const double tolerance = std::max (12.0, 0.06 * f0);   // 12 Hz covers the Hann main lobe
+    double harmonic = 0.0, total = 0.0;
+
+    for (std::size_t k = 1; k < magnitudes.size(); ++k)
+    {
+        const double hz = static_cast<double> (k) * binHz;
+        const double power = magnitudes[k] * magnitudes[k];
+        const double nearest = std::round (hz / f0) * f0;
+
+        total += power;
+
+        if (nearest > 0.0 && std::fabs (hz - nearest) <= tolerance)
+            harmonic += power;
+    }
+
+    return total > 0.0 ? harmonic / total : 0.0;
 }
 
 } // namespace vowelprobe

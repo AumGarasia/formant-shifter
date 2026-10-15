@@ -51,7 +51,18 @@ void SignalsmithEngine::prepare (double sampleRate, int maxBlockSize, int numCha
     s.numChannels = numChannels;
     s.maxBlockSize = maxBlockSize;
 
-    s.stretch.presetDefault (numChannels, static_cast<float> (sampleRate), s.options.splitComputation);
+        if (s.options.blockMs.has_value())
+    {
+        const double ms = std::clamp (*s.options.blockMs, 10.0, 500.0);
+        const int block = std::max (64, static_cast<int> (sampleRate * ms / 1000.0));
+        const int interval = std::max (16, block / 4);
+
+        s.stretch.configure (numChannels, block, interval, s.options.splitComputation);
+    }
+    else
+    {
+        s.stretch.presetDefault (numChannels, static_cast<float> (sampleRate), s.options.splitComputation);
+    }
 
     const auto channels = static_cast<std::size_t> (numChannels);
     const auto block = static_cast<std::size_t> (maxBlockSize);

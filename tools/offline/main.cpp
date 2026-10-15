@@ -189,6 +189,7 @@ int main (int argc, char* argv[])
         for (const auto& name : fsdsp::engineNames())
             std::cerr << ' ' << name;
 
+        std::cerr << "\nsignalsmith engines accept a block length: --engine signalsmith@60 (ms, 10 to 500)";        
         std::cerr << '\n';
         return 1;
     }
