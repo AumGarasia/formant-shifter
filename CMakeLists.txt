@@ -51,7 +51,11 @@ juce_add_plugin(FormantShifter
 
 target_sources(FormantShifter PRIVATE
     src/PluginProcessor.h
-    src/PluginProcessor.cpp)
+    src/PluginProcessor.cpp
+    src/PluginEditor.h
+    src/PluginEditor.cpp
+    src/ui/RetroLookAndFeel.h
+    src/ui/RetroLookAndFeel.cpp)
 
 target_compile_definitions(FormantShifter PUBLIC
     JUCE_WEB_BROWSER=0
@@ -89,7 +93,9 @@ add_executable(fsdsp_tests
     tests/support/VowelProbe.h
     tests/FormantIndependenceTests.cpp
     tests/EngineFactoryTests.cpp
-    tests/FormantRoutingTests.cpp)
+    tests/FormantRoutingTests.cpp
+    tests/ValueFormatTests.cpp
+    tests/SegmentLayoutTests.cpp)
 
 target_include_directories(fsdsp_tests PRIVATE tests)
 target_link_libraries(fsdsp_tests PRIVATE fsdsp Catch2::Catch2WithMain)

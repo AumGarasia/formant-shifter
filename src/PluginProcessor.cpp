@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 
 #include "dsp/SignalsmithEngine.h"
+#include "PluginEditor.h"
 
 #include <algorithm>
 
@@ -142,7 +143,7 @@ void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor (*this);
+    return new PluginEditor (*this);
 }
 
 // Entry point JUCE calls to create the plugin instance
