@@ -36,9 +36,9 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
     layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { formantLinkId, 1 },
                                                         "Formant Link", false));
     
-    layout.add (std::make_unique<Param> (juce::ParameterID { mixId, 1}, "Mix",
-                                         juce::NormalisableRange<float> (0.0f, 100.0f, 0.01f),
-                                         0.0f, Attrs().withLabel ("%")));
+    layout.add (std::make_unique<Param> (juce::ParameterID { mixId, 1 }, "Mix",
+                                         juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
+                                         100.0f, Attrs().withLabel ("%")));
     
     layout.add (std::make_unique<Param> (juce::ParameterID { outputId, 1}, "Output",
                                          juce::NormalisableRange<float> (outputMinDb, outputMaxDb, 0.01f),
