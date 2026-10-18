@@ -68,6 +68,7 @@ tested without any plugin framework.
 build/offline_render_artefacts/Release/offline_render in.wav --engine signalsmith@80 --pitch 5 --formant -2
 build/Release/engine_probe formants        # are pitch and formant independent?
 build/Release/engine_probe blocks -7       # latency / accuracy / purity per block length
+./validate-plugin.sh [level]	           # pluginval on both formats, plus Steinberg’s VST3 validator
 ```
 
 ## Testing
@@ -80,11 +81,9 @@ processing, counted through a replaced `operator new`; this does not see raw `ma
 Plugin-level checks: `auval`, pluginval (levels 5 and 10), and the cancellation test in a DAW
 (same clip on two tracks, one phase-inverted, plugin at Mix 0 %: the sum must be silence).
 
-## Known limitations
+## Known limitation(s)
 
 - macOS only.
-- The VST3 has not been checked with Steinberg's validator.
-- Alterboy's Robot and Quantize modes (pitch-tracked) are not implemented.
 
 ## Licensing
 
