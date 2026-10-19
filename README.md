@@ -3,6 +3,15 @@
 A pitch and formant shifter plugin (AU and VST3, macOS), modeled on the idea of Soundtoys'
 AlterBoy: shift the pitch and the formants of a voice independently.
 
+## For reviewers: where to look
+
+- `src/dsp/EffectCore.cpp` and `tests/EffectCoreTests.cpp`: the whole effect (dry path,
+  mix, ramps, chunking) and the tests that pin it down, including an exact-null test
+  proving the dry and wet paths are aligned to the sample.
+- `tests/RealtimeSafetyTests.cpp`: proves the audio path doesn't allocate.
+- `tools/probe/main.cpp`: measures pitch/formant behaviour; it chose the default settings.
+- `src/ui/RetroLookAndFeel.cpp`: the hand-drawn interface.
+
 ## Controls
 
 | Control | Range | Notes |
@@ -41,7 +50,7 @@ Pinned submodules (`external/`): JUCE 8.0.12, Signalsmith Stretch 1.4.0, Signals
 |---|---|
 | `./build.sh` | Debug build of the DSP library, tests and tools, then runs the test suite |
 | `./build-plugin.sh` | Release build of the AU and VST3, installs them to `~/Library/Audio/Plug-Ins`, runs `auval` |
-| `./validate-plugin.sh [level]` | Runs pluginval (install it separately) on both formats; default level 5 |
+| `./validate-plugin.sh [level]` | pluginval on both formats, plus Steinberg’s VST3 validator
 
 Always test the plugin with the Release build: the DSP is several times slower in Debug.
 After rebuilding, quit and reopen the host, which keeps the old binary loaded.
@@ -68,7 +77,6 @@ tested without any plugin framework.
 build/offline_render_artefacts/Release/offline_render in.wav --engine signalsmith@80 --pitch 5 --formant -2
 build/Release/engine_probe formants        # are pitch and formant independent?
 build/Release/engine_probe blocks -7       # latency / accuracy / purity per block length
-./validate-plugin.sh [level]	           # pluginval on both formats, plus Steinberg’s VST3 validator
 ```
 
 ## Testing
@@ -83,7 +91,7 @@ Plugin-level checks: `auval`, pluginval (levels 5 and 10), and the cancellation 
 
 ## Known limitation(s)
 
-- macOS only.
+- Currently macOS only.
 
 ## Licensing
 
